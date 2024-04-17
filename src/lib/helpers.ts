@@ -1,5 +1,5 @@
 import fs from 'fs'
-
+import { Storage } from '@google-cloud/storage'
 /**
  * Writes data to a TSV file locally.
  * 
@@ -18,6 +18,11 @@ import fs from 'fs'
  * ```
  */
 export function writeTsvLocal(fileName: string, directory: string, columnNames: string[], data: string[][]) {
+  // create the dir if it doesnt exist
+  if (!fs.existsSync(directory)) {
+    fs.mkdirSync(directory, { recursive: true });
+  }
+
   let csvString = columnNames.join('\t') + '\n'
 
   const formattedData = data.map((row) => row.join('\t').replace('\n', ''));
@@ -27,14 +32,59 @@ export function writeTsvLocal(fileName: string, directory: string, columnNames: 
   // console.log(`formatted: ${formattedRows}`)
 
   csvString = csvString + formattedRows
+  const filePath = directory + '/' + fileName
 
   try {
-    fs.writeFileSync(directory + fileName, csvString);
-    console.log(`file successfully written to: ${directory + fileName}`)
+    fs.writeFileSync(filePath, csvString);
+    console.log(`file successfully written to: ${filePath}`)
   } catch (err) {
-    console.error(`Error writing file to: ${directory + fileName}, ${err}`);
+    console.error(`Error writing file to: ${filePath}, ${err}`);
   }
 
+}
 
+// "/Users/jowen/Desktop/smarterjobs/data-extraction/config/smarterjobs-39b7997b940d.json"
+// "smarterjobs"
+// bucket="smarter-jobs"
+// localStoragePath: '/Users/jowen/Desktop/smarterjobs/data-extraction/output/crypto-jobs-list-2024-04.tsv'
+export async function transferToGcp(keyFilenamePath: string, projectId: string, localStoragePath: string, bucketName: string, cloudStoragePath: string) {
+  // const { Storage } = require("@google-cloud/storage");
+  // first write to tmp local storage, then transfer file to gcp and then clean up tmp storage
 
+  const storage = new Storage({
+    projectId: projectId,
+    keyFilename: keyFilenamePath,
+  });
+
+  try {
+    const gcs = storage.bucket(bucketName); // Removed "gs://" from the bucket name
+    const result = await gcs.upload(localStoragePath, {
+      destination: cloudStoragePath,
+      metadata: {
+        contentType: "application/plain", // Adjust the content type as needed
+      }
+    });
+    console.log(`${localStoragePath.split('/').pop()} uploaded to smarter-jobs`);
+
+    return result[0].metadata.mediaLink;
+  } catch (error) {
+    console.log(error);
+    throw new Error(error.message);
+  }
+
+}
+
+export function writeTsvToGcp(fileName: string, columnNames: string[], data: string[][], keyFilenamePath: string, projectId: string, bucketName: string, cloudStoragePath: string) {
+  // 1. write to tmp local storage
+  // 2. transfer from tmp to gcp
+  // 3. clean up tmp 
+  const tmpPath = `${process.cwd()}/tmp`
+  writeTsvLocal(fileName, tmpPath, columnNames, data)
+  transferToGcp(keyFilenamePath, projectId, `${tmpPath}/${fileName}`, bucketName, cloudStoragePath)
+  // try {
+  //   fs.unlinkSync(`${tmpPath}/${fileName}`);
+  // } catch (error) {
+  //   console.log(`error deleting tmp file: ${error}`);
+  // }
+  
 }

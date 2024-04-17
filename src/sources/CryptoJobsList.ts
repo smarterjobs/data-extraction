@@ -2,7 +2,7 @@
 // JOB DATA
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { writeTsvLocal } from '../lib/helpers';
+import { writeTsvLocal, writeTsvToGcp } from '../lib/helpers';
 // import { CryptoJobsListData } from './types';
 
 // https://cryptojobslist.com/api/jobs/backend-engineer-level-2-sde-1-coinshift-bangalore
@@ -211,13 +211,29 @@ export async function cryptoJobsList() {
     const today = new Date().toISOString()
     console.log(`today: ${today}`)
 
-    // const links = await fetchJobsList()
+    const links = await fetchJobsList()
     // console.log(links)
-    const jobData = await fetchJobData(['/developer/blockchain-developer-algorithm-global-amber-global'])
-    console.log(`writing job data to csv`)
-    writeTsvLocal(`crypto-jobs-list-${today}.tsv`, '/Users/jowen/Desktop/smarterjobs/data-extraction/output/', columnNames, jobData)
+    // const jobData = await fetchJobData(links)
 
-    // console.log(`jobdata length: ${jobData}`)
+
+    // const fileName = `crypto-jobs-list-${today}.tsv`
+
+    // writeTsvToGcp(
+    // fileName, 
+    // columnNames, 
+    // jobData, 
+    // `${process.cwd()}/config/smarterjobs-39b7997b940d.json`, 
+    // "smarterjobs",
+    // "smarter-jobs",
+    // `ELT_raw/${fileName}`
+    // )
+
+    // https://storage.googleapis.com/smarter-test/crypto-jobs-list-2024-04.tsv
+    // https://storage.cloud.google.com/smarter-test/crypto-jobs-list-2024-04.tsv
+
+    // writeTsvLocal(`crypto-jobs-list-${today}.tsv`, '/Users/jowen/Desktop/smarterjobs/data-extraction/output/', columnNames, jobData)
+
+  
 }
 
 

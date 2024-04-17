@@ -1,6 +1,7 @@
 import axios from 'axios';
 import cheerio from 'cheerio';
 import { cryptoJobsList } from './sources/CryptoJobsList';
+// import { uploadToGcpStorage } from './lib/helpers';
 // import { cryptoJobsList } from './sources/cryptojobslist';
 
 // https://cryptojobslist.com/api/jobs/backend-engineer-level-2-sde-1-coinshift-bangalore
@@ -17,6 +18,8 @@ console.log("working!")
 
 async function getSourceData() {
     await cryptoJobsList()
+    // console.log(`pwed: ${process.cwd()}`)
+    // await uploadToGcpStorage('crypto-jobs-list-2024-04.tsv')
 }
 
 getSourceData()

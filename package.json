@@ -5,6 +5,7 @@
   "author": "james owen",
   "license": "MIT",
   "dependencies": {
+    "@google-cloud/storage": "^7.9.0",
     "axios": "^1.6.8",
     "cheerio": "^1.0.0-rc.12",
     "nodemon": "^3.1.0",
@@ -13,7 +14,7 @@
   },
   "scripts": {
     "start": "tsc && node dist/index.js",
-    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts"
+    "dev": "'ts-node' src/index.ts"
   },
   "devDependencies": {
     "@types/axios": "^0.14.0",
