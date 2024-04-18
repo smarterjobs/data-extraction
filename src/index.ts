@@ -14,9 +14,10 @@ import { cryptoJobsList } from './sources/CryptoJobsList';
 // 3. then write to dynamo  (actually, this should be done only right at the end (after index.ts has finished executing))
 
 
-console.log("working!")
+console.log("Data extraction starting...")
 
 async function getSourceData() {
+    // console.log("WORKING...")
     await cryptoJobsList()
     // console.log(`pwed: ${process.cwd()}`)
     // await uploadToGcpStorage('crypto-jobs-list-2024-04.tsv')

@@ -213,20 +213,20 @@ export async function cryptoJobsList() {
 
     const links = await fetchJobsList()
     // console.log(links)
-    // const jobData = await fetchJobData(links)
+    const jobData = await fetchJobData(links)
 
 
-    // const fileName = `crypto-jobs-list-${today}.tsv`
+    const fileName = `crypto-jobs-list-${today}.tsv`
 
-    // writeTsvToGcp(
-    // fileName, 
-    // columnNames, 
-    // jobData, 
-    // `${process.cwd()}/config/smarterjobs-39b7997b940d.json`, 
-    // "smarterjobs",
-    // "smarter-jobs",
-    // `ELT_raw/${fileName}`
-    // )
+    writeTsvToGcp(
+    fileName, 
+    columnNames, 
+    jobData, 
+    `${process.cwd()}/config/smarterjobs-39b7997b940d.json`, 
+    "smarterjobs",
+    "smarter-jobs",
+    `ELT_raw/${fileName}`
+    )
 
     // https://storage.googleapis.com/smarter-test/crypto-jobs-list-2024-04.tsv
     // https://storage.cloud.google.com/smarter-test/crypto-jobs-list-2024-04.tsv
