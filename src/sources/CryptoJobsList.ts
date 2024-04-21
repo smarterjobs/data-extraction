@@ -2,23 +2,9 @@
 // JOB DATA
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { writeTsvLocal, writeTsvToGcp } from '../lib/helpers';
+import { Logger, writeCsvLocal, writeCsvToGcp } from '../lib/helpers';
+import { Storage } from '@google-cloud/storage';
 // import { CryptoJobsListData } from './types';
-
-// https://cryptojobslist.com/api/jobs/backend-engineer-level-2-sde-1-coinshift-bangalore
-
-const urlsToScrape = [
-    'https://cryptojobslist.com/?sort=recent&page=1',
-    'https://cryptojobslist.com/?sort=recent&page=2',
-    'https://cryptojobslist.com/?sort=recent&page=3',
-    'https://cryptojobslist.com/?sort=recent&page=4',
-    'https://cryptojobslist.com/?sort=recent&page=5',
-    'https://cryptojobslist.com/?sort=recent&page=6',
-    'https://cryptojobslist.com/?sort=recent&page=7',
-    'https://cryptojobslist.com/?sort=recent&page=8',
-
-]
-
 
 
 interface LocationSchema {
@@ -113,7 +99,7 @@ interface CryptoJobsListData {
     jobStats: boolean;
 }
 
-async function fetchJobsList() {
+async function fetchJobsList(urlsToScrape: string[]) {
     const links = [];
 
     for (let url of urlsToScrape) {
@@ -137,44 +123,51 @@ async function fetchJobsList() {
     return links
 }
 
-async function fetchJobData(links: string[]) {
+async function fetchJobData(links: string[], logger: Logger) {
     const dateFound = new Date().toISOString();
 
     const jobData = []
 
     const apiPrefix = 'https://cryptojobslist.com/api/jobs/'
     for (let link of links) {
+        logger.incrementAttempted()
         const url = apiPrefix + link.split('/').slice(2).join('/')
-        console.log(`fetching data from: ${url}`)
+        logger.log(`fetching data from: ${url}`)
 
         // datePosted, title, company, description, additionalInfo, salary, salaryRange, contractType, perks, location, country, applicationLink, emailApplication, tags, dateFound, numLinkClicks
         try {
-            const data: Job = (await axios.get(url)).data.job;
+            const page = await axios.get(url)
+            const data: Job = page.data.job;
+            
+            const descriptionHtml = cheerio.load(data.jobDescription);
 
             const trimmedData = [
-                data.publishedAt,
-                data.jobTitle,
-                data.companyName,
-                `${data.jobDescription.trim()}`,
+                `"${data.publishedAt}"`,
+                `"${data.jobTitle}"`,
+                `"${data.companyName}"`,
+                `"${data.jobDescription.trim()}"`,
+                `"${descriptionHtml('*').text()}"`,
+                // `"${descriptionHtml('*').text()}"`,
+                "",
+                `"${JSON.stringify(data?.salary)}"`,
+                `"${data.salaryRange}"`,
+                `"${data.employmentType}"`,
+                "",
+                `"${data.jobLocation}"`,
+                "",
+                `"${data.applicationLink}"`,
                 '',
-                data.salary,
-                data.salaryRange,
-                data.employmentType,
-                '',
-                data.jobLocation,
-                '',
-                data.applicationLink,
-                '',
-                data.tags,
-                data.applicationLinkClicks,
-                dateFound
+                `"${data.tags}"`,
+                `"${data.applicationLinkClicks}"`,
+                `"${dateFound}"`
             ]
 
             jobData.push(trimmedData)
+            logger.incrementSucceeded()
             // console.log(`description: ${data.jobDescription}`)
 
         } catch (error) {
-            console.error(`Error pulling job data for ${url}: ${error}`);
+            logger.log(`Error pulling job data for ${url}: ${error}`, 40);
 
         }
     }
@@ -183,17 +176,15 @@ async function fetchJobData(links: string[]) {
 
 }
 
+export async function cryptoJobsList(cfg: any, storage: Storage, logger:Logger) {
 
-
-
-
-export async function cryptoJobsList() {
 
     const columnNames = [
         "date_posted",
         "job_title",
         "company",
-        "job_description",
+        "raw_description",
+        "stripped_description",
         "additional_info",
         "salary",
         "salary_range",
@@ -208,32 +199,28 @@ export async function cryptoJobsList() {
         "date_found"
     ]
 
+    logger.log("Visiting job pages...")
+    const links = await fetchJobsList(cfg['urlsToScrape'])
+
+    logger.log("Fetching individual job data")
+    const jobData = await fetchJobData(links, logger)
+
     const today = new Date().toISOString()
-    console.log(`today: ${today}`)
-
-    const links = await fetchJobsList()
-    // console.log(links)
-    const jobData = await fetchJobData(links)
-
-
-    const fileName = `crypto-jobs-list-${today}.tsv`
-
-    writeTsvToGcp(
-    fileName, 
-    columnNames, 
-    jobData, 
-    `${process.cwd()}/config/smarterjobs-39b7997b940d.json`, 
-    "smarterjobs",
-    "smarter-jobs",
-    `ELT_raw/${fileName}`
+    const fileName = `${cfg['fileName']}-${today}.txt`
+    logger.log("writing to GCP..")
+    await writeCsvToGcp(
+        cfg['bucket'],
+        fileName,
+        cfg['rawFilePath'],
+        columnNames,
+        jobData,
+        storage,
+        logger
     )
+    logger.log("Finished Crypto Jobs List extraction")
+    
+    // writeCsvLocal(fileName, `${process.cwd()}/output/`, columnNames, jobData)
 
-    // https://storage.googleapis.com/smarter-test/crypto-jobs-list-2024-04.tsv
-    // https://storage.cloud.google.com/smarter-test/crypto-jobs-list-2024-04.tsv
-
-    // writeTsvLocal(`crypto-jobs-list-${today}.tsv`, '/Users/jowen/Desktop/smarterjobs/data-extraction/output/', columnNames, jobData)
-
-  
 }
 
 
