@@ -97,4 +97,3 @@ async function test() {
 const s = "alkjfaw\n akjdfa \n \n\n jajajaslf\nalaj"
 const cleaned = s.replace(/\n/g, "")
 console.log(s)
-console.log(cleaned)
