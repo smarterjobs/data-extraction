@@ -92,11 +92,6 @@ async function test() {
 }
 // test()
 
-// "token": "***REMOVED***",
-// "chatId": "***REMOVED***"
-// sendTelegramMessage('testing...', "***REMOVED***", "***REMOVED***")
-
-
 
 // const s = String.raw`alkjfaw\n akjdfa \n \n\n jajajaslf\nalaj`
 const s = "alkjfaw\n akjdfa \n \n\n jajajaslf\nalaj"
