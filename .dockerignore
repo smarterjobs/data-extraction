@@ -1,1 +1,4 @@
 cloud-function-scripts
+config
+node_modules
+src/test.ts

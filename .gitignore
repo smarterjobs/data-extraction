@@ -3,3 +3,5 @@ node_modules
 config
 tmp
 test.ts
+.env
+*/test.ts

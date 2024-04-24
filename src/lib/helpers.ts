@@ -84,7 +84,7 @@ export async function transferToGcp(localStoragePath: string, bucketName: string
 
   try {
     // const gcs = storage.bucket(bucketName); // Removed "gs://" from the bucket name
-    
+
     const options = {
       destination: cloudStoragePath,
       // Optional:
@@ -100,7 +100,7 @@ export async function transferToGcp(localStoragePath: string, bucketName: string
     // console.log(`bucketname: ${bucketName}, cloudStoragePath: ${cloudStoragePath}, localStoragePath: ${localStoragePath}`)
     await storage.bucket(bucketName).upload(localStoragePath, options);
 
-    logger.log(`${localStoragePath.split('/').pop()} uploaded to GCP`);
+    logger.log(`${localStoragePath.split('/').pop()} uploaded to GCP: ${cloudStoragePath}`);
 
     // return result[0].metadata.mediaLink;
   } catch (e) {
@@ -129,12 +129,47 @@ export async function writeCsvToGcp(bucketName: string, fileName: string, cloudS
 
 
 
-export async function readJsonFromGcp(storage: Storage, bucketName: string, configFilePath: string) {
-  const configFile = await storage.bucket(bucketName).file(configFilePath).download();
+export async function readJsonFromGcp(storage: Storage, bucketName: string, filePath: string) {
+  const configFile = await storage.bucket(bucketName).file(filePath).download();
   return await JSON.parse(configFile[0].toString('utf8'));
+
+}
+
+export async function overwriteHistoryFile(data: string, bucketName: string, fileName: string, cloudStoragePath: string, storage: Storage, logger: Logger) {
+
+  let existing = []
+  try {
+    const gcpData = await readJsonFromGcp(storage, bucketName, cloudStoragePath)
+    existing = [...existing, ...gcpData['processedDates']]
+
+
+  } catch (error) {
+    logger.log(`${cloudStoragePath} does not exist, writing new`)
+  }
+  existing.push(data)
+  const uploadData = { "processedDates": existing }
+
+
+  try {
+    const tmpPath = `${process.cwd()}/tmp/${fileName}`
+    if (!fs.existsSync(`${process.cwd()}/tmp`)) {
+      fs.mkdirSync(`${process.cwd()}/tmp`, { recursive: true });
+    }
+
+    fs.writeFileSync(tmpPath, JSON.stringify(uploadData));
+    await transferToGcp(tmpPath, bucketName, cloudStoragePath, storage, logger)
+
+    fs.unlinkSync(tmpPath);
+    logger.log(`Successfully overwrite of ${fileName}`)
+
+  } catch (error) {
+    logger.log(`Unable to overwrite json file in gcp storage: ${error}`)
+  }
+
 
 
 }
+
 export async function sendTelegramMessage(message: string, token: string, chatId: string) {
 
   await axios.get(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${message}`)
