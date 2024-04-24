@@ -21,8 +21,7 @@ console.log("Data extraction starting...")
 async function getSourceData() {
   // console.log("WORKING...")
   const storage = new Storage({
-    projectId: "smarterjobs",
-    keyFilename: `${process.cwd()}/config/smarterjobs-39b7997b940d.json`,
+    projectId: "smarterjobs"
   });
 
   const config = await readJsonFromGcp(storage, "smarter-jobs", "config/extractionConfig.json")

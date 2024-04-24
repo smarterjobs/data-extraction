@@ -14,10 +14,10 @@ How to set up typescript locally: https://dev.to/caelinsutch/building-a-web-scra
 
 docker:
     [replace the tag]
-    docker build . --tag us-east1-docker.pkg.dev/smarterjobs/smarter-repo/data-extraction:tag4
+    docker build . --tag us-east1-docker.pkg.dev/smarterjobs/smarter-repo/data-extraction:tag6
     !docker run doesnt seem to work but you can run manually in the desktop app
     [to push to gcloud artifact registry:]
-    docker push  us-east1-docker.pkg.dev/smarterjobs/smarter-repo/data-extraction:tag4
+    docker push  us-east1-docker.pkg.dev/smarterjobs/smarter-repo/data-extraction:tag6
 
     Our new image was successfully pushed to Artifact Registry, but our cloud run job is still running the tag1 image. We'll need to manually update the job to build the tag2 image.
 
